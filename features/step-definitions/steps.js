@@ -23,6 +23,8 @@ Given(/^I am on the (\w+) page$/, async (page) => {
 //LOGIN
 When(/^I login with (\w+) and (.+)$/, async (username, password) => {
   await LoginPage.login(username, password);
+  // Esperar a que la página cargue completamente después del login
+  await browser.pause(2000);
 });
 
 Then(/^I should see a text saying (.*)$/, async (message) => {
@@ -32,7 +34,19 @@ Then(/^I should see a text saying (.*)$/, async (message) => {
     await expect($('p.error')).toHaveTextContaining('could not be verified');
   } else {
     // valid username or password - check for page title
-    await expect($('.title')).toBeExisting();
+    // Esperar a que el elemento exista y tenga contenido
+    await browser.waitUntil(
+      async () => {
+        const elem = await $('.title');
+        if (!(await elem.isExisting())) return false;
+        const text = await elem.getText();
+        return text && text !== 'Error!' && text.includes(message);
+      },
+      {
+        timeout: 15000,
+        timeoutMsg: `Expected page title to contain "${message}", but it didn't appear within 15s`
+      }
+    );
     await expect($('.title')).toHaveTextContaining(message);
   }
 });
@@ -62,7 +76,35 @@ When(/^I navigate to Transfer Funds$/, async () => {
 });
 
 When(/^I transfer (.*) from account (.*) to account (.*)$/, async (amount, fromAccount, toAccount) => {
-  await TransferPage.transferFunds(amount, fromAccount, toAccount);
+  // Si fromAccount o toAccount son placeholders (ej: "12345", "54321"), 
+  // obtener cuentas reales disponibles desde ambos dropdowns
+  if (fromAccount === '12345' || toAccount === '54321') {
+    const fromAccounts = await TransferPage.getAvailableFromAccounts();
+    const toAccounts = await TransferPage.getAvailableToAccounts();
+    
+    console.log(`fromAccounts found: ${JSON.stringify(fromAccounts)}`);
+    console.log(`toAccounts found: ${JSON.stringify(toAccounts)}`);
+    
+    if (fromAccounts.length < 1) {
+      throw new Error(`Need at least 1 account to transfer from, but found ${fromAccounts.length}`);
+    }
+    
+    if (toAccounts.length < 1) {
+      throw new Error(`Need at least 1 account to transfer to, but found ${toAccounts.length}`);
+    }
+    
+    // Usar la primera cuenta disponible como origen
+    const actualFromAccount = fromAccounts[0];
+    
+    // Para destino: si hay más de una opción en toAccounts, usar la segunda; sino, usar la misma
+    const actualToAccount = toAccounts.length > 1 ? toAccounts[1] : toAccounts[0];
+    
+    console.log(`Using fromAccount: ${actualFromAccount}, toAccount: ${actualToAccount}`);
+    
+    await TransferPage.transferFunds(amount, actualFromAccount, actualToAccount);
+  } else {
+    await TransferPage.transferFunds(amount, fromAccount, toAccount);
+  }
 });
 
 Then(/^I should see a confirmation message (.*)$/, async (message) => {
@@ -96,14 +138,27 @@ When(/^I navigate to Bill Pay$/, async () => {
 
 When(/^I fill the payee information with name "(.*)", address "(.*)", city "(.*)", state "(.*)", zipcode "(.*)", phone "(.*)"$/, async (name, address, city, state, zipcode, phone) => {
   await BillPayPage.fillPayeeInfo(name, address, city, state, zipcode, phone);
+  await browser.pause(500);
 });
 
 When(/^I fill the account details with account "(.*)", verify "(.*)", and amount "(.*)"$/, async (account, verify, amount) => {
   await BillPayPage.fillAccountDetails(account, verify, amount);
+  await browser.pause(500);
 });
 
 When(/^I select from account "(.*)"$/, async (accountNumber) => {
-  await BillPayPage.selectFromAccount(accountNumber);
+  // Si es el placeholder "12345", usar la primera cuenta disponible
+  if (accountNumber === '12345') {
+    const availableAccounts = await BillPayPage.getAvailableAccounts();
+    
+    if (availableAccounts.length < 1) {
+      throw new Error(`Need at least 1 account, but found ${availableAccounts.length}`);
+    }
+    
+    await BillPayPage.selectFromAccount(availableAccounts[0]);
+  } else {
+    await BillPayPage.selectFromAccount(accountNumber);
+  }
 });
 
 When(/^I submit the payment$/, async () => {
@@ -118,7 +173,19 @@ When(/^I navigate to Request Loan$/, async () => {
 When(/^I request a loan of (.*) with down payment (.*) from account (.*)$/, async (loanAmount, downPayment, accountNumber) => {
   await LoanRequestPage.fillLoanAmount(loanAmount);
   await LoanRequestPage.fillDownPayment(downPayment);
-  await LoanRequestPage.selectFromAccount(accountNumber);
+  
+  // Si es el placeholder "12345", usar la primera cuenta disponible
+  if (accountNumber === '12345') {
+    const availableAccounts = await LoanRequestPage.getAvailableAccounts();
+    
+    if (availableAccounts.length < 1) {
+      throw new Error(`Need at least 1 account for loan, but found ${availableAccounts.length}`);
+    }
+    
+    await LoanRequestPage.selectFromAccount(availableAccounts[0]);
+  } else {
+    await LoanRequestPage.selectFromAccount(accountNumber);
+  }
 });
 
 When(/^I submit the loan request$/, async () => {

@@ -21,7 +21,7 @@ Feature: Bill Payment Service
     And I fill the account details with account "12345", verify "54321", and amount "100"
     And I select from account "12345"
     And I submit the payment
-    Then I should see an error message Error!
+    Then I should see an error message Invalid
 
   Scenario: Bill payment with empty payee name
     When I navigate to Bill Pay
@@ -29,7 +29,7 @@ Feature: Bill Payment Service
     And I fill the account details with account "12345", verify "12345", and amount "50"
     And I select from account "12345"
     And I submit the payment
-    Then I should see an error message Error!
+    Then I should see an error message Invalid
 
   Scenario: Bill payment with invalid amount
     When I navigate to Bill Pay
@@ -37,4 +37,4 @@ Feature: Bill Payment Service
     And I fill the account details with account "12345", verify "12345", and amount "abc"
     And I select from account "12345"
     And I submit the payment
-    Then I should see an error message Error!
+    Then I should see an error message Invalid

@@ -62,23 +62,36 @@ class BillPayPage extends Page {
 
     async fillPayeeInfo (name, address, city, state, zipcode, phone) {
         // Esperar a que los campos estén disponibles
-        await this.payeeNameInput.waitForExist({ timeout: 5000 });
+        await this.payeeNameInput.waitForExist({ timeout: 10000 });
+        await this.payeeNameInput.waitForClickable({ timeout: 5000 });
+        await browser.pause(500);
         
         await this.payeeNameInput.setValue(name);
+        await browser.pause(200);
         await this.addressInput.setValue(address);
+        await browser.pause(200);
         await this.cityInput.setValue(city);
+        await browser.pause(200);
         await this.stateInput.setValue(state);
+        await browser.pause(200);
         await this.zipCodeInput.setValue(zipcode);
+        await browser.pause(200);
         await this.phoneInput.setValue(phone);
+        await browser.pause(200);
     }
 
     async fillAccountDetails (account, verify, amount) {
+        await this.accountNumberInput.waitForClickable({ timeout: 5000 });
+        await browser.pause(300);
         await this.accountNumberInput.setValue(account);
+        await browser.pause(200);
         await this.verifyAccountInput.setValue(verify);
+        await browser.pause(200);
         await this.amountInput.setValue(amount);
+        await browser.pause(200);
     }
 
-    async selectFromAccount (accountNumber) {
+    async getAvailableAccounts () {
         await this.fromAccountSelect.waitForExist({ timeout: 5000 });
         
         // Esperar a que las opciones se carguen
@@ -90,11 +103,42 @@ class BillPayPage extends Page {
             { timeout: 5000, timeoutMsg: 'Expected account options to load after 5s' }
         );
         
+        const options = await this.fromAccountSelect.$$('option');
+        const accountIds = [];
+        
+        for (const option of options) {
+            const value = await option.getText();
+            if (value && value.trim() !== '') {
+                accountIds.push(value.trim());
+            }
+        }
+        
+        return accountIds;
+    }
+
+    async selectFromAccount (accountNumber) {
+        await this.fromAccountSelect.waitForExist({ timeout: 10000 });
+        await this.fromAccountSelect.waitForClickable({ timeout: 5000 });
+        
+        // Esperar a que las opciones se carguen
+        await browser.waitUntil(
+            async () => {
+                const options = await this.fromAccountSelect.$$('option');
+                return options.length > 0;
+            },
+            { timeout: 5000, timeoutMsg: 'Expected account options to load after 5s' }
+        );
+        
+        await browser.pause(500);
         await this.fromAccountSelect.selectByVisibleText(accountNumber);
+        await browser.pause(300);
     }
 
     async submitPayment () {
+        await this.sendPaymentButton.waitForClickable({ timeout: 5000 });
+        await browser.pause(500);
         await this.sendPaymentButton.click();
+        await browser.pause(2000);
         
         // Esperar a que aparezca el resultado o error
         await browser.waitUntil(

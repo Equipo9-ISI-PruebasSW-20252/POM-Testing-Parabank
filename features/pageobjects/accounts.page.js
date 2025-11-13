@@ -32,6 +32,31 @@ class AccountsPage extends Page {
         return rows.length - 2;
     }
 
+    async getAccountIds () {
+        // Esperar a que las filas se carguen
+        await browser.waitUntil(
+            async () => (await $$('table#accountTable tbody tr')).length > 0,
+            {
+                timeout: 5000,
+                timeoutMsg: 'Expected accounts table to have rows after 5s'
+            }
+        );
+        
+        // Obtener todos los enlaces de cuenta
+        const accountLinks = await $$('table#accountTable tbody tr td:first-child a');
+        const accountIds = [];
+        
+        for (const link of accountLinks) {
+            const accountId = await link.getText();
+            // Solo agregar si no es vacío y no es parte del total row
+            if (accountId && accountId.trim() !== '') {
+                accountIds.push(accountId.trim());
+            }
+        }
+        
+        return accountIds;
+    }
+
     open () {
         return super.open('overview.htm');
     }

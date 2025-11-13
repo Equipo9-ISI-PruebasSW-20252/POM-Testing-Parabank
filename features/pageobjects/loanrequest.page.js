@@ -50,15 +50,19 @@ class LoanRequestPage extends Page {
      * Methods to interact with the page
      */
     async fillLoanAmount(amount) {
-        await this.loanAmountInput.waitForExist({ timeout: 5000 });
+        await this.loanAmountInput.waitForExist({ timeout: 10000 });
+        await this.loanAmountInput.waitForClickable({ timeout: 5000 });
+        await browser.pause(500);
         await this.loanAmountInput.setValue(amount);
     }
 
     async fillDownPayment(downPayment) {
+        await this.downPaymentInput.waitForClickable({ timeout: 5000 });
+        await browser.pause(500);
         await this.downPaymentInput.setValue(downPayment);
     }
 
-    async selectFromAccount(accountNumber) {
+    async getAvailableAccounts() {
         await this.fromAccountDropdown.waitForExist({ timeout: 5000 });
         // Wait for options to be populated
         await browser.waitUntil(
@@ -71,11 +75,43 @@ class LoanRequestPage extends Page {
                 timeoutMsg: 'Expected account dropdown to have options after 5s'
             }
         );
+        
+        const options = await this.fromAccountDropdown.$$('option');
+        const accountIds = [];
+        
+        for (const option of options) {
+            const value = await option.getText();
+            if (value && value.trim() !== '') {
+                accountIds.push(value.trim());
+            }
+        }
+        
+        return accountIds;
+    }
+
+    async selectFromAccount(accountNumber) {
+        await this.fromAccountDropdown.waitForExist({ timeout: 10000 });
+        await this.fromAccountDropdown.waitForClickable({ timeout: 5000 });
+        // Wait for options to be populated
+        await browser.waitUntil(
+            async () => {
+                const options = await this.fromAccountDropdown.$$('option');
+                return options.length > 0;
+            },
+            {
+                timeout: 5000,
+                timeoutMsg: 'Expected account dropdown to have options after 5s'
+            }
+        );
+        await browser.pause(500);
         await this.fromAccountDropdown.selectByVisibleText(accountNumber);
+        await browser.pause(300);
     }
 
     async submitLoanRequest() {
+        await this.applyNowButton.waitForClickable({ timeout: 5000 });
         await this.applyNowButton.click();
+        await browser.pause(1000);
         
         // Wait for one of the result elements to appear
         await browser.waitUntil(

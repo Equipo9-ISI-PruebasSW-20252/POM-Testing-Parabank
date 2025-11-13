@@ -24,8 +24,24 @@ class LoginPage extends Page {
      * e.g. to login using username and password
      */
     async login (username, password) {
+        // Esperar a que los campos estén listos
+        await this.inputUsername.waitForExist({ timeout: 10000 });
+        await this.inputUsername.waitForClickable({ timeout: 5000 });
+        
+        // Limpiar y escribir username
+        await this.inputUsername.clearValue();
+        await browser.pause(500);
         await this.inputUsername.setValue(username);
+        await browser.pause(500);
+        
+        // Limpiar y escribir password
+        await this.inputPassword.clearValue();
+        await browser.pause(500);
         await this.inputPassword.setValue(password);
+        await browser.pause(500);
+        
+        // Esperar y hacer click en submit
+        await this.btnSubmit.waitForClickable({ timeout: 5000 });
         await this.btnSubmit.click();
     }
 
