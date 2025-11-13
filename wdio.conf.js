@@ -61,11 +61,15 @@ export const config = {
         // 5 instances get started at a time.
         maxInstances: 5,
         //
-        browserName: 'edge',
-        'ms:edgeOptions': {
+        // Detect OS and use appropriate browser
+        browserName: process.platform === 'win32' ? 'edge' : 'chrome',
+        'goog:chromeOptions': process.platform !== 'win32' ? {
+            args: ['--headless', '--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage', '--disable-setuid-sandbox']
+        } : undefined,
+        'ms:edgeOptions': process.platform === 'win32' ? {
             args: ['--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage'],
             binary: 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'
-        }
+        } : undefined
         // If outputDir is provided WebdriverIO can capture driver session logs
         // it is possible to configure which logTypes to include/exclude.
         // excludeDriverLogs: ['*'], // pass '*' to exclude all driver session logs
